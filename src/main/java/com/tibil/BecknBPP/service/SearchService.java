@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,8 @@ import com.tibil.BecknBPP.model.Skill;
 @Component
 public class SearchService implements ProcessInternalRequestService {
 
+	@Value("${bpp.url}")
+	private String bppUrl;
 	private ServiceUtils utils;
 	private DbUtils dbUtils;
 
@@ -76,7 +79,8 @@ public class SearchService implements ProcessInternalRequestService {
 			candidates.stream().forEach(x -> System.out.println(x));
 
 			OnSearchBody body = getOnsearchBody(searchBody, candidates);
-			ResponseEntity<InlineResponse2001> response = restTemplate.postForEntity("http://localhost:8080/on_search",
+			String responseUrl = searchBody.getContext().getBapUri();
+			ResponseEntity<InlineResponse2001> response = restTemplate.postForEntity(responseUrl + "/on_search",
 					body, InlineResponse2001.class);
 
 			dbUtils.insertRequestFlow(body.getContext(), utils.getSerialisedData(body),
@@ -146,6 +150,7 @@ public class SearchService implements ProcessInternalRequestService {
 
 		OnSearchBody onSearchBody = new OnSearchBody();
 		onSearchBody.setContext(searchBody.getContext().action(ActionEnum.ON_SEARCH));
+		onSearchBody.setContext(onSearchBody.getContext().bppUri(bppUrl));
 		onSearchBody.setMessage(new OnSearchMessage());
 		onSearchBody.getMessage().setCatalog(new Catalog().descriptor(new Descriptor().name("Catalog")));
 
